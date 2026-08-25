@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 body {
-  background: #f8fafc;
+  background:
+    radial-gradient(circle at 15% 25%, rgba(219, 234, 254, 0.7), transparent 28rem),
+    #f8fafc;
   color: #172033;
+  -webkit-font-smoothing: antialiased;
 }

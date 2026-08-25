@@ -1,3 +1,22 @@
 # Backend
 
-FastAPI가 독립 실행되는 최소 Backend 골격입니다. 현재는 실행 상태 확인을 위한 `GET /health`만 제공합니다.
+FastAPI 기반 파일 업로드 Backend입니다. 파일을 파싱하거나 저장하지 않고 확장자, MIME type, 빈 파일 여부와 10 MiB 제한만 검증합니다.
+
+## 실행
+
+```powershell
+..\.venv\Scripts\python.exe -m pip install -r requirements.txt
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
+```
+
+## 테스트
+
+```powershell
+..\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+..\.venv\Scripts\python.exe -m pytest -q
+```
+
+Endpoint:
+
+- `GET /health`
+- `POST /api/quote-files/upload`
