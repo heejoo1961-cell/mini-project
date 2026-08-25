@@ -1,17 +1,11 @@
+
+> quote-comparison-front@0.1.0 dev
+> next dev
+
   ▲ Next.js 14.2.31
-  - Local:        http://127.0.0.1:3000
-  - Network:      http://127.0.0.1:3000
+  - Local:        http://localhost:3001
   - Environments: .env.local
 
  ✓ Starting...
- ✓ Ready in 1657ms
- ○ Compiling / ...
- ✓ Compiled / in 6.8s (461 modules)
- GET / 200 in 7446ms
- ✓ Compiled in 876ms (238 modules)
- GET / 200 in 87ms
- ✓ Compiled in 787ms (461 modules)
- ✓ Compiled in 440ms (461 modules)
- GET / 200 in 151ms
- GET / 200 in 43ms
- GET / 200 in 319ms
+ ✓ Ready in 2.3s
+[?25h

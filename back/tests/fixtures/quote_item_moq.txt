@@ -1,0 +1,49 @@
+--- Page 1 ---
+SYNTHETIC SAMPLE FOR SOFTWARE TESTING - NOT VALID FOR COMMERCIAL USE
+1
+QUOTATION
+Value Factory Co., Ltd.
+Quote No.: VF-Q-0819
+Business ID: 201-88-00002
+Contact: Seoyeon Lee / sales@valuefactory.example
+Quote Date: 2026-08-19
+To: Hanyang University Festival Planning Team
+QUOTATION SUMMARY
+Item
+Description
+Qty
+Unit Price
+Amount
+MOQ
+Canvas Bag
+Cotton / 1-color print
+500
+KRW 4,200
+KRW 2,100,000
+1,000 EA
+Tumbler
+Stainless 500ml
+300
+KRW 8,500
+KRW 2,550,000
+500 EA
+Goods subtotal
+KRW 4,650,000
+Shipping
+KRW 250,000
+VAT 10%
+KRW 490,000
+Grand total
+KRW 5,390,000
+IMPORTANT CONDITION
+Listed prices apply only when the MOQ is met. Prices must be renegotiated for the requested quantities.
+Delivery
+18 days after purchase order
+Payment
+100% prepayment with order
+Validity
+Until 2026-08-26
+Quality
+One pre-production sample included
+Remarks
+Shipping excluded / destination changes may incur extra cost

@@ -2,9 +2,17 @@ from fastapi import FastAPI, File, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from .upload import UploadValidationError, validate_upload
+from .extraction import (
+    ExtractionFileRequest,
+    ExtractionRequestError,
+    extract_uploaded_pdfs,
+)
+from .quote_comparison import compare_quotes
+from .quote_parser import parse_quote
+from .upload import UploadValidationError, save_quote_uploads, validate_upload
 
 app = FastAPI(title="견적 비교 MVP API")
 app.add_middleware(
@@ -67,6 +75,17 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+class ExtractFilePayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    original_name: str = Field(alias="originalName", min_length=1)
+    saved_name: str = Field(alias="savedName", min_length=1)
+
+
+class ExtractQuotesPayload(BaseModel):
+    files: list[ExtractFilePayload]
+
+
 @app.post("/api/quote-files/upload", response_model=None)
 async def upload_quote_file(
     file: UploadFile | None = File(default=None),
@@ -85,4 +104,108 @@ async def upload_quote_file(
         "fileSize": validated.file_size,
         "status": "success",
         "message": "견적서 파일이 정상적으로 전달되었습니다.",
+    }
+
+
+@app.post("/api/quotes/upload", response_model=None)
+async def upload_quote_files(
+    files: list[UploadFile] | None = File(default=None),
+):
+    try:
+        uploaded = await save_quote_uploads(files or [])
+    except UploadValidationError as error:
+        return error_response(error.status_code, error.code, error.message)
+
+    return {
+        "message": "견적서 업로드가 완료되었습니다.",
+        "uploadedFiles": [
+            {
+                "originalName": item.original_name,
+                "savedName": item.saved_name,
+                "size": item.size,
+                "contentType": item.content_type,
+            }
+            for item in uploaded
+        ],
+    }
+
+
+@app.post("/api/quotes/extract", response_model=None)
+def extract_pdf_quotes(payload: ExtractQuotesPayload):
+    requested_files = [
+        ExtractionFileRequest(
+            original_name=item.original_name,
+            saved_name=item.saved_name,
+        )
+        for item in payload.files
+    ]
+    try:
+        results = extract_uploaded_pdfs(requested_files)
+    except ExtractionRequestError as error:
+        return error_response(error.status_code, error.code, error.message)
+
+    return {
+        "message": "견적서 텍스트 추출이 완료되었습니다.",
+        "results": [
+            {
+                "originalName": item.original_name,
+                "savedName": item.saved_name,
+                "status": item.status,
+                "pageCount": item.page_count,
+                "characterCount": item.character_count,
+                "extractedText": item.extracted_text,
+                "errorMessage": item.error_message,
+            }
+            for item in results
+        ],
+    }
+
+
+@app.post("/api/quotes/structure", response_model=None)
+def structure_pdf_quotes(payload: ExtractQuotesPayload):
+    requested_files = [
+        ExtractionFileRequest(
+            original_name=item.original_name,
+            saved_name=item.saved_name,
+        )
+        for item in payload.files
+    ]
+    try:
+        extracted_results = extract_uploaded_pdfs(requested_files)
+    except ExtractionRequestError as error:
+        return error_response(error.status_code, error.code, error.message)
+
+    structured_results = [parse_quote(item) for item in extracted_results]
+    return {
+        "message": "견적서 항목 구조화가 완료되었습니다.",
+        "results": [item.to_dict() for item in structured_results],
+    }
+
+
+@app.post("/api/quotes/compare", response_model=None)
+def compare_pdf_quotes(payload: ExtractQuotesPayload):
+    if len(payload.files) < 2:
+        return error_response(
+            400,
+            "AT_LEAST_TWO_FILES_REQUIRED",
+            "공급업체 견적 비교에는 PDF가 두 개 이상 필요합니다.",
+        )
+
+    requested_files = [
+        ExtractionFileRequest(
+            original_name=item.original_name,
+            saved_name=item.saved_name,
+        )
+        for item in payload.files
+    ]
+    try:
+        extracted_results = extract_uploaded_pdfs(requested_files)
+    except ExtractionRequestError as error:
+        return error_response(error.status_code, error.code, error.message)
+
+    structured_results = [parse_quote(item) for item in extracted_results]
+    comparison = compare_quotes(structured_results)
+    return {
+        "message": "공급업체 견적 비교가 완료되었습니다.",
+        **comparison,
     }

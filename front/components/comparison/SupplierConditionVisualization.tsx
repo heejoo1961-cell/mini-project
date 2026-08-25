@@ -1,0 +1,24 @@
+import type { ComparisonSupplier } from "../../lib/api/compareQuotes";
+import { displayValue, formatBenchmarkDifference, formatMoney } from "../workflow/formatters";
+import { SupplierComparisonTable } from "./SupplierComparisonTable";
+import { VisualizationSelector } from "./VisualizationSelector";
+import { statusLabel, statusStyle, supplierDisplayName } from "./comparisonDisplay";
+import { VIEW_OPTIONS, VisualizationViews } from "./visualizationConfig";
+
+function heat(value: number | null, values: Array<number | null>, allowed: boolean) {
+  if (value === null || !allowed) return "bg-[#f8f9fb]";
+  const valid = values.filter((entry): entry is number => entry !== null);
+  const min = Math.min(...valid); const max = Math.max(...valid); const ratio = max === min ? 0 : (value - min) / (max - min);
+  return ratio < .34 ? "bg-[#edf5f0]" : ratio < .67 ? "bg-[#f3f4f6]" : "bg-[#f9efee]";
+}
+
+export function SupplierConditionVisualization({ suppliers, benchmark, view, onChange }: { suppliers: ComparisonSupplier[]; benchmark: number | null; view: VisualizationViews["supplierComparison"]; onChange: (view: VisualizationViews["supplierComparison"]) => void }) {
+  const selector = <VisualizationSelector label="공급업체 종합조건" onChange={onChange} options={VIEW_OPTIONS.supplierComparison} value={view} />;
+  if (view === "pivot-table") return <SupplierComparisonTable benchmark={benchmark} headerAction={selector} suppliers={suppliers} />;
+  return <section className="rounded-md border border-line bg-white p-5"><header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-[17px] font-semibold text-text">공급업체 종합조건</h2><p className="mt-1 text-[13px] text-muted">정량 조건과 추가 확인이 필요한 거래조건을 함께 봅니다.</p></div>{selector}</header>
+    {view === "cards" ? <div className="mt-4 divide-y divide-line border-y border-line">{suppliers.map((supplier) => <article className="grid gap-3 py-4 lg:grid-cols-[14rem_1fr]" key={supplier.savedName}><div><h3 className="text-sm font-semibold">{supplierDisplayName(supplier)}</h3><span className={`status-badge mt-2 ${statusStyle[supplier.status]}`}>{statusLabel[supplier.status]}</span></div><div><dl className="grid gap-x-5 gap-y-2 text-[13px] sm:grid-cols-3">{[["최종금액", formatMoney(supplier.grandTotal)], ["기준 대비", formatBenchmarkDifference(supplier.status, supplier.differenceFromBenchmark, supplier.differenceRate)], ["납기", supplier.leadTimeDays === null ? displayValue(supplier.leadTime) : `${supplier.leadTimeDays}일`], ["MOQ", displayValue(supplier.moq)], ["결제조건", displayValue(supplier.paymentTerms)], ["유효기간", displayValue(supplier.validity)]].map(([key, value]) => <div key={key}><dt className="text-muted">{key}</dt><dd className="mt-0.5 font-medium text-text">{value}</dd></div>)}</dl>{supplier.warnings.length > 0 && <p className="mt-3 border-l-[3px] border-l-[#8a4b08] pl-3 text-[13px] text-warning">{supplier.warnings.find((warning) => /[가-힣]/.test(warning)) ?? "거래조건 확인 필요"}</p>}</div></article>)}</div> : <div className="data-scroll mt-4"><table className="w-full min-w-[800px]"><thead><tr><th className="text-left" scope="col">조건</th>{suppliers.map((supplier) => <th className="text-left" key={supplier.savedName} scope="col">{supplierDisplayName(supplier)}<span className={`status-badge ml-2 ${statusStyle[supplier.status]}`}>{statusLabel[supplier.status]}</span></th>)}</tr></thead><tbody>{[
+      { label: "최종금액", values: suppliers.map((supplier) => supplier.grandTotal), text: (supplier: ComparisonSupplier) => formatMoney(supplier.grandTotal) }, { label: "납기 일수", values: suppliers.map((supplier) => supplier.leadTimeDays), text: (supplier: ComparisonSupplier) => supplier.leadTimeDays === null ? displayValue(supplier.leadTime) : `${supplier.leadTimeDays}일` }, { label: "기준 대비 차이율", values: suppliers.map((supplier) => supplier.differenceRate), text: (supplier: ComparisonSupplier) => supplier.differenceRate === null ? "비교 제외" : `${supplier.differenceRate.toFixed(2)}%` }
+    ].map((row) => <tr key={row.label}><th className="text-left font-semibold" scope="row">{row.label}</th>{suppliers.map((supplier, index) => <td className={`text-right font-medium tabular-nums ${heat(row.values[index], row.values, supplier.status === "comparable")}`} key={supplier.savedName}>{row.text(supplier)}</td>)}</tr>)}{[["MOQ", (supplier: ComparisonSupplier) => displayValue(supplier.moq)], ["결제조건", (supplier: ComparisonSupplier) => displayValue(supplier.paymentTerms)], ["품질조건", (supplier: ComparisonSupplier) => displayValue(supplier.qualityTerms)]].map(([label, render]) => <tr key={label as string}><th className="text-left font-semibold" scope="row">{label as string}</th>{suppliers.map((supplier) => <td key={supplier.savedName}>{(render as (supplier: ComparisonSupplier) => string)(supplier)}</td>)}</tr>)}</tbody></table></div>}
+  </section>;
+}
+

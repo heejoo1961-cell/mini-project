@@ -1,0 +1,47 @@
+--- Page 1 ---
+SYNTHETIC SAMPLE FOR SOFTWARE TESTING - NOT VALID FOR COMMERCIAL USE
+1
+QUOTATION
+Blueworks Design
+Quote No.: BW-260819-01
+Business ID: 101-88-00001
+Contact: Min Kim / 02-1234-1001
+Quote Date: 2026-08-19
+To: Hanyang University Festival Planning Team
+We are pleased to submit the following quotation for festival merchandise.
+Item
+Specification
+Qty
+Unit
+Unit Price
+Amount
+Canvas Bag
+10s cotton / 1-side print
+500
+EA
+KRW 4,500
+KRW 2,250,000
+Stainless Tumbler
+500 ml / 1-color print
+300
+EA
+KRW 8,900
+KRW 2,670,000
+Goods Subtotal
+KRW 4,920,000
+Shipping
+KRW 120,000
+VAT (10%)
+KRW 504,000
+Grand Total
+KRW 5,544,000
+Lead Time
+10 days after order and artwork approval
+MOQ
+100 units per item
+Payment
+30% deposit, 70% after delivery
+Validity
+14 days from quote date
+Remarks
+One artwork revision included / one delivery location in Seoul

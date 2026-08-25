@@ -1,9 +1,15 @@
-export type UploadSuccess = {
-  fileName: string;
-  fileType: "xlsx" | "csv";
-  fileSize: number;
-  status: "success";
+export type UploadedQuoteFile = {
+  originalName: string;
+  savedName: string;
+  size: number;
+  contentType: string;
+};
+
+export type UploadedPdf = UploadedQuoteFile;
+
+export type UploadQuotesSuccess = {
   message: string;
+  uploadedFiles: UploadedPdf[];
 };
 
 type UploadErrorResponse = {
@@ -32,20 +38,29 @@ function isErrorResponse(value: unknown): value is UploadErrorResponse {
   );
 }
 
-function isSuccessResponse(value: unknown): value is UploadSuccess {
+function isUploadedPdf(value: unknown): value is UploadedPdf {
   if (typeof value !== "object" || value === null) return false;
   const candidate = value as Record<string, unknown>;
   return (
-    candidate.status === "success" &&
-    typeof candidate.fileName === "string" &&
-    (candidate.fileType === "xlsx" || candidate.fileType === "csv") &&
-    typeof candidate.fileSize === "number" &&
-    typeof candidate.message === "string"
+    typeof candidate.originalName === "string" &&
+    typeof candidate.savedName === "string" &&
+    typeof candidate.size === "number" &&
+    typeof candidate.contentType === "string"
   );
 }
 
-export async function uploadQuote(file: File): Promise<UploadSuccess> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+export function isUploadQuotesSuccess(value: unknown): value is UploadQuotesSuccess {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.message === "string" &&
+    Array.isArray(candidate.uploadedFiles) &&
+    candidate.uploadedFiles.every(isUploadedPdf)
+  );
+}
+
+export async function uploadQuotes(files: File[]): Promise<UploadQuotesSuccess> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {
     throw new UploadQuoteError(
       "Backend 주소가 설정되지 않았습니다.",
@@ -54,14 +69,14 @@ export async function uploadQuote(file: File): Promise<UploadSuccess> {
   }
 
   const formData = new FormData();
-  formData.append("file", file);
+  files.forEach((file) => formData.append("files", file));
 
   let response: Response;
   try {
-    response = await fetch(
-      `${baseUrl.replace(/\/$/, "")}/api/quote-files/upload`,
-      { method: "POST", body: formData },
-    );
+    response = await fetch(`${baseUrl.replace(/\/$/, "")}/api/quotes/upload`, {
+      method: "POST",
+      body: formData,
+    });
   } catch {
     throw new UploadQuoteError(
       "Backend에 연결할 수 없습니다. 서버 실행 상태를 확인해 주세요.",
@@ -80,7 +95,7 @@ export async function uploadQuote(file: File): Promise<UploadSuccess> {
     );
   }
 
-  if (!isSuccessResponse(body)) {
+  if (!isUploadQuotesSuccess(body)) {
     throw new UploadQuoteError(
       "업로드 응답을 처리할 수 없습니다. 잠시 후 다시 시도해 주세요.",
       "INVALID_SUCCESS_RESPONSE",
