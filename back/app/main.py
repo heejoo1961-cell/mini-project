@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
+import os
 
 from .extraction import (
     ExtractionFileRequest,
@@ -11,13 +12,31 @@ from .extraction import (
     extract_uploaded_pdfs,
 )
 from .quote_comparison import compare_quotes
-from .quote_parser import parse_quote
+from .ai_provider import AIConfigurationError
+from .quote_structuring import structure_extracted_quotes
 from .upload import UploadValidationError, save_quote_uploads, validate_upload
 
 app = FastAPI(title="견적 비교 MVP API")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    #allow_origins=["http://localhost:3000"],
+
+    FRONTEND_ORIGIN = os.getenv(
+        "FRONTEND_ORIGIN",
+        "http://localhost:3000"
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://localhost:3000",
+            FRONTEND_ORIGIN,
+        ],
+        allow_credentials=False,
+        allow_methods=["POST"],
+        allow_headers=["*"],
+    )
+
     allow_credentials=False,
     allow_methods=["POST"],
     allow_headers=["*"],
@@ -175,7 +194,12 @@ def structure_pdf_quotes(payload: ExtractQuotesPayload):
     except ExtractionRequestError as error:
         return error_response(error.status_code, error.code, error.message)
 
-    structured_results = [parse_quote(item) for item in extracted_results]
+    try:
+        structured_results, _parser_mode = structure_extracted_quotes(
+            extracted_results
+        )
+    except AIConfigurationError as error:
+        return error_response(503, "AI_CONFIGURATION_ERROR", str(error))
     return {
         "message": "견적서 항목 구조화가 완료되었습니다.",
         "results": [item.to_dict() for item in structured_results],
@@ -203,7 +227,12 @@ def compare_pdf_quotes(payload: ExtractQuotesPayload):
     except ExtractionRequestError as error:
         return error_response(error.status_code, error.code, error.message)
 
-    structured_results = [parse_quote(item) for item in extracted_results]
+    try:
+        structured_results, _parser_mode = structure_extracted_quotes(
+            extracted_results
+        )
+    except AIConfigurationError as error:
+        return error_response(503, "AI_CONFIGURATION_ERROR", str(error))
     comparison = compare_quotes(structured_results)
     return {
         "message": "공급업체 견적 비교가 완료되었습니다.",
