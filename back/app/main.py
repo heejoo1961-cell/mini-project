@@ -17,28 +17,20 @@ from .quote_structuring import structure_extracted_quotes
 from .upload import UploadValidationError, save_quote_uploads, validate_upload
 
 app = FastAPI(title="견적 비교 MVP API")
+
+FRONTEND_ORIGIN = os.getenv(
+    "FRONTEND_ORIGIN",
+    "http://localhost:3000"
+)
+
 app.add_middleware(
     CORSMiddleware,
-    #allow_origins=["http://localhost:3000"],
-
-    FRONTEND_ORIGIN = os.getenv(
-        "FRONTEND_ORIGIN",
-        "http://localhost:3000"
-    )
-
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[
-            "http://localhost:3000",
-            FRONTEND_ORIGIN,
-        ],
-        allow_credentials=False,
-        allow_methods=["POST"],
-        allow_headers=["*"],
-    )
-
+    allow_origins=[
+        "http://localhost:3000",
+        FRONTEND_ORIGIN,
+    ],
     allow_credentials=False,
-    allow_methods=["POST"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
